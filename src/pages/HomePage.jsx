@@ -1,25 +1,20 @@
-import React from 'react'
-import ProductCard from '../components/ProductCard'
-import drinks from '../data/product'
-// import Footer from '../components/Footer'
-const HomePage = () => {
-    const [currentPage, setCurrentPage] = useState (1);
-    const itemsPerPage = 6;
-    const paginated = drinks.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
-    const totalPages = Math.ceil(drinks.length / itemsPerPage);
+import Header from "../components/ui/Layout/Header"
+import HeroSection from "../components/ui/Layout/HeroSection"
+import Categories from "../components/ui/Layout/Categories"
+import FeaturedProducts from "../components/ui/Layout/FeaturedProducts"
+import Footer from "../components/ui/Layout/Footer"
 
+const HomePage = () => {
   return (
-      <div className="container">
-          <div className="product-grid">
-              {paginated.map((product) => (
-                  <ProductCard key={product.id} {...product} />
-              ))}
-          </div>
-          <Footer />
-      </div>
+    <div className="min-h-screen bg-white">
+      <Header />
+      <main>
+        <HeroSection />
+        <Categories />
+        <FeaturedProducts />
+      </main>
+      <Footer />
+    </div>
   )
 }
 
