@@ -1,64 +1,96 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect } from "react"
-import { api } from "../lib/api"
+import api from "../services/api"
 
 const AuthContext = createContext()
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const userData = await api.getMe()
-        setUser(userData)
-      } catch (error) {
-        api.removeToken()
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    const token = localStorage.getItem("auth_token")
+    const token = localStorage.getItem("token")
     if (token) {
-      checkAuth()
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`
+      fetchUser()
     } else {
-      setIsLoading(false)
+      setLoading(false)
     }
   }, [])
 
+  const fetchUser = async () => {
+    try {
+      const response = await api.get("/user")
+      setUser(response.data)
+    } catch (error) {
+      localStorage.removeItem("token")
+      delete api.defaults.headers.common["Authorization"]
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const login = async (email, password) => {
     try {
-      const response = await api.login(email, password)
-      setUser(response.user)
+      const response = await api.post("/login", { email, password })
+      const { token, user } = response.data
+
+      localStorage.setItem("token", token)
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`
+      setUser(user)
+
+      return { success: true }
     } catch (error) {
-      throw error
+      return {
+        success: false,
+        message: error.response?.data?.message || "Login failed",
+      }
     }
   }
 
-  const register = async (name, email, password, confirmPassword) => {
+  const register = async (name, email, password, password_confirmation) => {
     try {
-      const response = await api.register(name, email, password, confirmPassword)
-      setUser(response.user)
+      const response = await api.post("/register", {
+        name,
+        email,
+        password,
+        password_confirmation,
+      })
+
+      const { token, user } = response.data
+
+      localStorage.setItem("token", token)
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`
+      setUser(user)
+
+      return { success: true }
     } catch (error) {
-      throw error
+      return {
+        success: false,
+        message: error.response?.data?.message || "Registration failed",
+      }
     }
   }
 
-  const logout = async () => {
-    try {
-      await api.logout()
-    } finally {
-      setUser(null)
-    }
+  const logout = () => {
+    localStorage.removeItem("token")
+    delete api.defaults.headers.common["Authorization"]
+    setUser(null)
   }
 
-  return <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>{children}</AuthContext.Provider>
+  const value = {
+    user,
+    login,
+    register,
+    logout,
+    loading,
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider")

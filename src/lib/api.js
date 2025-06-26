@@ -78,7 +78,7 @@ class ApiClient {
   }
 
   async getMe() {
-    return this.request("/me")
+    return this.request("/user") // Changed from /me to /user
   }
 
   // Products
@@ -90,6 +90,11 @@ class ApiClient {
 
     const query = searchParams.toString()
     return this.request(`/products${query ? `?${query}` : ""}`)
+  }
+
+  // Featured products
+  async getFeaturedProducts(limit = 6) {
+    return this.request(`/products/featured?limit=${limit}`)
   }
 
   async createProduct(product) {
